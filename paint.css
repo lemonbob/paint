@@ -1,0 +1,125 @@
+/**
+ * /*paint style sheet
+ *
+ * @format
+ */
+
+* {
+	margin: 0;
+	padding: 0;
+	user-select: none;
+	font-family: 'Dela Gothic One', cursive;
+}
+
+body {
+	width: 100vw;
+	height: 100vh;
+	background: linear-gradient(217deg, rgba(255, 0, 0, 0.8), rgba(255, 0, 0, 0) 70.71%), linear-gradient(127deg, rgba(0, 50, 100, 0.8), rgba(0, 50, 100, 0) 70.71%), linear-gradient(336deg, rgba(0, 0, 200, 0.8), rgba(0, 0, 200, 0) 70.71%);
+	background-size: 100% 100%;
+}
+
+.canvas {
+	position: absolute;
+	width: 100%;
+	height: 100%;	
+}
+
+.slider-wrapper {
+	position: relative;
+	padding: 30px 20px 0px 20px;
+	pointer-events: none;
+}
+
+.controls-wrapper {
+	position: relative;
+	display: flex;
+	flex-direction: row;
+	pointer-events: none;
+	padding: 30px 20px 0px 20px;
+	justify-content: space-between;
+}
+
+.palette-wrapper {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	pointer-events: none;
+}
+
+.colour-picker {
+	width: 70px;
+	height: 70px;
+	border-radius: 50%;
+	background-color: #fff;
+	box-shadow: 2px 2px 5px 0px rgba(0, 0, 0, 0.5);
+	pointer-events: all;
+	margin-bottom: 30px;
+	transition: transform 0.3s ease, background-color 0.6s ease;
+	border: 4px transparent solid;
+}
+
+.colour-picker img {
+	pointer-events: none;
+	width: 80%;
+	height: 80%;
+	margin: 10%;
+}
+
+.slider {
+	width: 100%;
+	pointer-events: all;
+}
+
+label {
+	margin: 20px 10px;
+}
+
+.polymathic-paint-selector {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	animation: modal-selector-fadeIn 0.7s ease both;
+	z-index:100;
+}
+
+.polymathic-paint-selector_item {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 70px;
+	height: 70px;
+	background-color: #fff;
+	border-radius: 50%;
+	box-shadow: 2px 2px 5px 0px rgba(0, 0, 0, 0.5);
+	pointer-events: all;
+}
+
+.polymathic-paint-colour-picker {
+	position: absolute;
+	top: 0;
+	left: 0;
+	background: radial-gradient(white 0%, transparent 70%), conic-gradient(red, green, blue, red);
+	border-radius: 50%;
+	box-shadow: 2px 2px 5px 0px rgba(0, 0, 0, 0.5);
+	pointer-events: all;
+}
+
+.polymathic-paint-selector_item img {
+	pointer-events: none;
+	width: 80%;
+	height: 80%;
+	margin: 10%;
+}
+
+@keyframes modal-selector-fadeIn {
+	0% {
+		opacity: 0;
+		transform: scale(0);
+	}
+	100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+}

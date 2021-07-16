@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Canvas Draw</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="preconnect" href="https://fonts.gstatic.com">
+	<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap" rel="stylesheet">
+	<link href="paint.css" rel="stylesheet">	   
+</head>
+
+
+<body>
+
+	<canvas class="canvas"></canvas>
+	<div class="slider-wrapper">
+		<label for="brush-size">Brush Size</label>
+		<input class="slider" type="range" id="brush-size" name="brush-size" min="1" max="350">
+		<label for="brush-opacity">Transparency</label>
+		<input class="slider" type="range" id="brush-opacity" name="brush-opacity" min="1" max="100">
+	</div>
+	<div class="controls-wrapper">
+		<div class="palette-wrapper">
+			<div class="colour-picker" tool-picker="true"><img src="icons/paint.png"></div>
+			<div class="colour-picker" brush-picker="true"><img src="brushes/brush1.png"></div>				
+		</div>
+		<div class="palette-wrapper">
+			<div class="colour-picker" colour-picker="true" style="background-color:#f00;"></div>			
+		</div>
+	</div>
+	<!-- SCRIPT-->
+	<script src="js/app.js" type="module"></script>
+</body>
+
+</html>
