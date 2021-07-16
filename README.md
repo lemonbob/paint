@@ -16,5 +16,8 @@ Bucket fill uses a custom algorithm that is 100s of times faster than StackOverf
 * create an instance of the component, add at least one Canvas, and add at least one brush (ideally 2).
 * set the active tool by supplying passing in one of the following strings - paint, spray, pen, fill, eraser.
 * set the active brush by passing in an idex of one of the added brushes.
-* Write your own controller app, or use th vanilla app.js as an example
+* Write your own controller app, or use th vanilla app.js as an example.
+
+The paint component uses a modified class architecture to enable private properties and methods within a class using module scope.
+Do not pass the created instance to the data context of Vue or other mutating methods that set getters and setter observers.
 
