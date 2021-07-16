@@ -21,3 +21,7 @@ Bucket fill uses a custom algorithm that is 100s of times faster than StackOverf
 The paint component uses a modified class architecture to enable private properties and methods within a class using module scope.
 Do not pass the created instance to the data context of Vue or other mutating methods that set getters and setter observers.
 
+In the url and code examples the canvas has been set to the entire screen. However, the canvas can be set to any size. Create the canvas as a tag in the markup and pass the node to the addCanvas method. The method will then set the size to the DOM size.
+
+Resizing the canvas will wipe the content.
+
