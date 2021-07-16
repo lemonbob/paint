@@ -1,3 +1,3 @@
-# paint
+# Polymathic Paint
 
-Polymathic Paint
+
