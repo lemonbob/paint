@@ -428,7 +428,7 @@ $paintPrivate.onmouseup = function (inst) {
 	if (inst.throttleInterval != undefined) clearInterval(inst.throttleInterval);
 	inst.throttleInterval = undefined;
 	
-	if (inst.isToolActive === true && inst.selectedTool !== 'fill') {
+	if (inst.isToolActive === true) {
 		inst.isToolActive = false;
 		if (inst.selectedTool === 'paint' || inst.selectedTool === 'eraser' || inst.selectedTool === 'pen') {
 			inst.ctxOffscreen1.restore();
@@ -643,10 +643,7 @@ $paintPrivate.fillOnCanvas = (inst, x, y) => {
 		imageData = new Uint8ClampedArray(imageData.buffer);
 		imageData = new ImageData(imageData, width);
 		inst.ctx.putImageData(imageData, 0, 0);
-	}
-	inst.ctx.restore();
-	//block rapid clicks
-	setTimeout(() => inst.isToolActive = false, 100);
+	}			
 };
 
 /**
