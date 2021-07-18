@@ -116,7 +116,7 @@ const setSelectedColourToColourPicker = (colour) => {
 
 const createModalSelector = (modalType, itemArray) => {
 	let itemSelector = document.createElement('div');
-	itemSelector.className = 'polymathic-paint-selector';
+	itemSelector.className = 'polymathic-paint-selector_wrapper';
 	let itemCount = itemArray.length;
 	let rect = document.body.getBoundingClientRect();
 	let r = (Math.min(rect.width, rect.height) * 0.7) / 2;
@@ -129,7 +129,7 @@ const createModalSelector = (modalType, itemArray) => {
 	let cY = rect.height / 2;
 	let angleInc = 6.28 / itemCount;
 	let angle = 0;
-	let html = '';
+	let html = '<div class="polymathic-paint-selector">';
 
 	for (let i = 0, item; (item = itemArray[i]); i++) {
 		let commonStyles = `width:${itemSize}px; height:${itemSize}px; transform: translate(${Math.sin(angle) * r + cX - itemSize / 2}px, ${Math.cos(angle) * -r + cY - itemSize / 2}px);`;
@@ -146,12 +146,13 @@ const createModalSelector = (modalType, itemArray) => {
 		}
 		angle += angleInc;
 	}
+	html += '</div>'
 	itemSelector.innerHTML = html;
 	document.body.appendChild(itemSelector);
 };
 
 const destroySelectorModal = () => {
-	let selectorModals = document.querySelectorAll('.polymathic-paint-selector');
+	let selectorModals = document.querySelectorAll('.polymathic-paint-selector_wrapper');
 	for (let selector of selectorModals) {
 		if (selector != undefined) selector.parentNode.removeChild(selector);
 	}
