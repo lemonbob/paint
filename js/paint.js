@@ -13,6 +13,7 @@ console.log('Paint.js by M J Livesey ©2021 Polymathic Design');
 
 const $paintPrivate = {};
 const instances = {};
+const devicePixelRatio = Math.floor(window.devicePixelRatio) <= 1 ? 1 : Math.floor(window.devicePixelRatio);
 
 const createPolymathicPaint = () => {
 	let guid = `${Math.floor(Math.random() * 1e8).toString(36)}-${Math.floor(Math.random() * 1e8).toString(36)}`;
@@ -20,6 +21,8 @@ const createPolymathicPaint = () => {
 	let inst = instances[guid];
 	document.addEventListener('mousemove', inst);
 	document.addEventListener('mouseup', inst);
+	document.addEventListener('touchmove', inst, { passive: false });
+	document.addEventListener('touchend', inst, { passive: false });
 	return {
 		addCanvas: inst.addCanvas,
 		removeCanvas: inst.removeCanvas,
@@ -81,6 +84,7 @@ $PolymathicPaint.prototype.addCanvas = function (canvas) {
 	inst.ctx = inst.canvasArray[inst.activeCanvas].canvas.getContext('2d');
 	inst.setCanvasSize(canvas);
 	canvas.addEventListener('mousedown', inst);
+	canvas.addEventListener('touchstart', inst, { passive: false });
 	return guid;
 };
 
@@ -97,6 +101,7 @@ $PolymathicPaint.prototype.removeCanvas = function (canvasGuid) {
 	if (inst.canvasArray[canvasIndex] != undefined) {
 		let canvas = inst.canvasArray[canvasIndex].canvas;
 		canvas.removeEventListener('mousedown', inst);
+		canvas.removeEventListener('touchstart', inst, { passive: false });
 		if (canvasIndex === inst.activeCanvas) {
 			inst.canvasRect = undefined;
 			inst.ctx = undefined;
@@ -142,15 +147,16 @@ $PolymathicPaint.prototype.setCanvasSize = function (target, canvasGuid) {
 
 	let canvas = inst.canvasArray[canvasIndex].canvas;
 	if (canvas == undefined) return null;
-	canvas.width = rect.width;
-	canvas.height = rect.height;
+	canvas.width = rect.width * devicePixelRatio;
+	canvas.height = rect.height * devicePixelRatio;
 	if (canvasIndex === inst.activeCanvas) {
-		inst.offscreenCanvas1.width = rect.width;
-		inst.offscreenCanvas1.height = rect.height;
-		inst.offscreenCanvas2.width = rect.width;
-		inst.offscreenCanvas2.height = rect.height;
+		inst.offscreenCanvas1.width = canvas.width;
+		inst.offscreenCanvas1.height = canvas.height;
+		inst.offscreenCanvas2.width = canvas.width;
+		inst.offscreenCanvas2.height = canvas.height;
 		inst.canvasRect = rect;
-		//return Object.assign({}, rect);
+		inst.canvasRect.canvasWidth = canvas.width;
+		inst.canvasRect.canvasHeight = canvas.height;
 	}
 };
 
@@ -185,10 +191,10 @@ $PolymathicPaint.prototype.addBrush = function (url, colour = '#0ff', w = 50, h 
 		canvas: document.createElement('canvas'),
 		image: brushImage,
 		ctx: undefined,
-		width: w,
-		height: h,
-		w2: w / 2,
-		h2: h / 2,
+		width: w * devicePixelRatio,
+		height: h * devicePixelRatio,
+		w2: (w * devicePixelRatio) / 2,
+		h2: (h * devicePixelRatio) / 2,
 		colour: colour,
 		opacity: opacity,
 		id: id
@@ -241,7 +247,7 @@ $PolymathicPaint.prototype.getBrushProperties = function (brushIndex) {
 	if (inst.brushes[brushIndex] == undefined) return null;
 	else {
 		let brush = inst.brushes[brushIndex];
-		let result = { width: brush.width, height: brush.height, opacity: brush.opacity, colour: brush.colour, id: brush.id };
+		let result = { width: Math.round(brush.width / devicePixelRatio), height: Math.round(brush.height / devicePixelRatio), opacity: brush.opacity, colour: brush.colour, id: brush.id };
 		return result;
 	}
 };
@@ -269,6 +275,8 @@ $PolymathicPaint.prototype.getBrushCount = function () {
 $PolymathicPaint.prototype.setBrushProperties = function (brushIndex, propertiesObject) {
 	let inst = instances[this.guid];
 	if (inst.brushes[brushIndex] == undefined) return;
+	if (propertiesObject.width) propertiesObject.width *= devicePixelRatio;
+	if (propertiesObject.height) propertiesObject.height *= devicePixelRatio;
 	Object.assign(inst.brushes[brushIndex], propertiesObject);
 	inst.brushes[brushIndex].w2 = inst.brushes[brushIndex].width / 2;
 	inst.brushes[brushIndex].h2 = inst.brushes[brushIndex].height / 2;
@@ -282,9 +290,12 @@ $PolymathicPaint.prototype.destroy = function () {
 	let inst = instances[this.guid];
 	for (let item of inst.canvasArray) {
 		item.canvas.removeEventListener('mousedown', inst);
+		item.canvas.removeEventListener('touchstart', inst, { passive: false });
 	}
 	document.removeEventListener('mousemove', inst);
 	document.removeEventListener('mouseup', inst);
+	document.removeEventListener('touchmove', inst, { passive: false });
+	document.removeEventListener('touchend', inst, { passive: false });
 	delete instances[inst];
 };
 
@@ -319,8 +330,24 @@ $PolymathicPaint.prototype.setBrushCanvas = function (brushIndex) {
  */
 $PolymathicPaint.prototype.handleEvent = function (e) {
 	let inst = instances[this.guid];
-	let eventMethod = 'on' + e.type;
-	if (inst.canvasArray[inst.activeCanvas] != undefined) $paintPrivate[eventMethod](inst, e);
+
+	if (inst.canvasArray[inst.activeCanvas].guid === e.target.getAttribute('canvas-guid')) {
+		e.preventDefault();
+		switch (e.type) {
+			case 'mousedown':
+			case 'touchstart':
+				$paintPrivate.onmousedown(inst, e);
+				break;
+			case 'mouseup':
+			case 'touchend':
+				$paintPrivate.onmouseup(inst);
+				break;
+			case 'mousemove':
+			case 'touchmove':
+				$paintPrivate.onmousemove(inst, e);
+				break;
+		}
+	}
 };
 
 //MODULE METHODS/////////////////////////////////
@@ -334,27 +361,31 @@ $PolymathicPaint.prototype.handleEvent = function (e) {
  */
 $paintPrivate.onmousedown = function (inst, e) {
 	let guid = e.target.getAttribute('canvas-guid');
-	if (guid !== inst.canvasArray[inst.activeCanvas].guid) return
-	inst.ctx.save();
-	inst.isToolActive = true;
-	inst.sX = e.pageX - inst.canvasRect.left;
-	inst.sY = e.pageY - inst.canvasRect.top;
-	if (inst.selectedTool === 'spray') {
-		let brush = inst.brushes[inst.activeBrush];
-		brush.ctx.save();
-		inst.throttleInterval = setInterval(() => inst.ctx.drawImage(brush.canvas, inst.sX - brush.w2 + (Math.random() * 10 - 5), inst.sY - brush.h2 + (Math.random() * 10 - 5), brush.canvas.width, brush.canvas.height), 100);
-		inst.ctx.globalAlpha = inst.getBrushProperties().opacity;
-	} else if (inst.selectedTool === 'paint' || inst.selectedTool === 'eraser' || inst.selectedTool === 'pen') {
-		let canvas = inst.canvasArray[inst.activeCanvas].canvas;
-		inst.ctxOffscreen1.save();
-		inst.ctxOffscreen2.save();
-		inst.ctxOffscreen1.clearRect(0, 0, inst.canvasRect.width, inst.canvasRect.height);
-		inst.ctxOffscreen2.clearRect(0, 0, inst.canvasRect.width, inst.canvasRect.height);
-		inst.ctxOffscreen2.drawImage(canvas, 0, 0);
-	} else if (inst.selectedTool === 'fill') {
-		$paintPrivate.fillOnCanvas(inst, inst.sX, inst.sY);
+	
+	if (guid === inst.canvasArray[inst.activeCanvas].guid && inst.isToolActive === false) {
+		inst.ctx.save();
+		inst.sX = e.pageX ? e.pageX - inst.canvasRect.left : e.changedTouches[0].pageX - inst.canvasRect.left;
+		inst.sY = e.pageY ? e.pageY - inst.canvasRect.top : e.changedTouches[0].pageY - inst.canvasRect.top;
+		inst.sX *= devicePixelRatio;
+		inst.sY *= devicePixelRatio;
+		inst.isToolActive = true;
+		if (inst.selectedTool === 'spray') {
+			let brush = inst.brushes[inst.activeBrush];
+			brush.ctx.save();
+			inst.throttleInterval = setInterval(() => inst.ctx.drawImage(brush.canvas, inst.sX - brush.w2 + (Math.random() * 10 - 5), inst.sY - brush.h2 + (Math.random() * 10 - 5), brush.canvas.width, brush.canvas.height), 100);
+			inst.ctx.globalAlpha = inst.getBrushProperties().opacity;
+		} else if (inst.selectedTool === 'paint' || inst.selectedTool === 'eraser' || inst.selectedTool === 'pen') {
+			let canvas = inst.canvasArray[inst.activeCanvas].canvas;
+			inst.ctxOffscreen1.save();
+			inst.ctxOffscreen2.save();
+			inst.ctxOffscreen1.clearRect(0, 0, inst.canvasRect.width * devicePixelRatio, inst.canvasRect.height * devicePixelRatio);
+			inst.ctxOffscreen2.clearRect(0, 0, inst.canvasRect.width * devicePixelRatio, inst.canvasRect.height * devicePixelRatio);
+			inst.ctxOffscreen2.drawImage(canvas, 0, 0);
+			$paintPrivate.onmousemove(inst, e);
+		} else if (inst.selectedTool === 'fill') {
+			$paintPrivate.fillOnCanvas(inst, inst.sX, inst.sY);
+		}
 	}
-	$paintPrivate.onmousemove(inst, e);
 };
 
 /**
@@ -366,8 +397,10 @@ $paintPrivate.onmousedown = function (inst, e) {
  */
 $paintPrivate.onmousemove = function (inst, e) {
 	if (inst.isToolActive) {
-		let x = e.pageX - inst.canvasRect.left;
-		let y = e.pageY - inst.canvasRect.top;
+		let x = e.pageX ? e.pageX - inst.canvasRect.left : e.changedTouches[0].pageX - inst.canvasRect.left;
+		let y = e.pageY ? e.pageY - inst.canvasRect.top : e.changedTouches[0].pageY - inst.canvasRect.top;
+		x *= devicePixelRatio;
+		y *= devicePixelRatio;
 		switch (inst.selectedTool) {
 			case 'paint':
 				$paintPrivate.paintOnCanvas(inst, x, y);
@@ -391,10 +424,11 @@ $paintPrivate.onmousemove = function (inst, e) {
  * EVENT
  * ends the draw cycle
  */
-$paintPrivate.onmouseup = function (inst, e) {
+$paintPrivate.onmouseup = function (inst) {
 	if (inst.throttleInterval != undefined) clearInterval(inst.throttleInterval);
 	inst.throttleInterval = undefined;
-	if (inst.isToolActive === true) {
+	
+	if (inst.isToolActive === true && inst.selectedTool !== 'fill') {
 		inst.isToolActive = false;
 		if (inst.selectedTool === 'paint' || inst.selectedTool === 'eraser' || inst.selectedTool === 'pen') {
 			inst.ctxOffscreen1.restore();
@@ -419,15 +453,15 @@ $paintPrivate.onmouseup = function (inst, e) {
  * @param {Number} y
  */
 $paintPrivate.paintOnCanvas = (inst, x, y) => {
-	let dx = x - inst.sX;
-	let dy = y - inst.sY;
-	let len = Math.max(Math.abs(dy), Math.abs(dx));
+	let len = Math.max(Math.abs(x - inst.sX), Math.abs(y - inst.sY));
 	let brush = inst.brushes[inst.activeBrush];
+	let startX = inst.sX - brush.w2;
+	let startY = inst.sY - brush.h2;
 	if (len > 1) {
-		dx = dx / len;
-		dy = dy / len;
+		let dx = (x - inst.sX) / len;
+		let dy = (y - inst.sY) / len;
 		for (let i = 1; i < len; i++) {
-			inst.ctxOffscreen1.drawImage(brush.canvas, inst.sX + i * dx - brush.w2, inst.sY + i * dy - brush.h2, brush.canvas.width, brush.canvas.height);
+			inst.ctxOffscreen1.drawImage(brush.canvas, startX + dx * i, startY + dy * i, brush.canvas.width, brush.canvas.height);
 		}
 	} else {
 		inst.ctxOffscreen1.drawImage(brush.canvas, x - brush.w2, y - brush.h2, brush.canvas.width, brush.canvas.height);
@@ -435,7 +469,7 @@ $paintPrivate.paintOnCanvas = (inst, x, y) => {
 	inst.sX = x;
 	inst.sY = y;
 	if (inst.selectedTool === 'eraser') inst.ctx.globalCompositeOperation = 'source-over';
-	inst.ctx.clearRect(0, 0, inst.canvasRect.width, inst.canvasRect.height);
+	inst.ctx.clearRect(0, 0, inst.canvasRect.width * devicePixelRatio, inst.canvasRect.height * devicePixelRatio);
 	inst.ctx.drawImage(inst.offscreenCanvas2, 0, 0);
 	if (inst.selectedTool === 'eraser') inst.ctx.globalCompositeOperation = 'destination-out';
 	inst.ctx.globalAlpha = inst.getBrushProperties().opacity;
@@ -466,21 +500,21 @@ $paintPrivate.sprayOnCanvas = (inst, x, y) => {
  * @param {Number} y
  */
 $paintPrivate.penOnCanvas = (inst, x, y) => {
-	let dx = x - inst.sX;
-	let dy = y - inst.sY;
-	let len = Math.max(Math.abs(dy), Math.abs(dx));
+	let len = Math.max(Math.abs(x - inst.sX), Math.abs(y - inst.sY));
 	let brush = inst.brushes[inst.activeBrush];
-	inst.ctxOffscreen1.clearRect(0, 0, inst.canvasRect.width, inst.canvasRect.height);
+	let startX = inst.sX - brush.w2;
+	let startY = inst.sY - brush.h2;
+	inst.ctxOffscreen1.clearRect(0, 0, inst.canvasRect.canvasWidth, inst.canvasRect.canvasHeight);
 	if (len > 1) {
-		dx = dx / len;
-		dy = dy / len;
+		let dx = (x - inst.sX) / len;
+		let dy = (y - inst.sY) / len;
 		for (let i = 1; i < len; i++) {
-			inst.ctxOffscreen1.drawImage(brush.canvas, inst.sX + i * dx - brush.w2, inst.sY + i * dy - brush.h2, brush.canvas.width, brush.canvas.height);
+			inst.ctxOffscreen1.drawImage(brush.canvas, startX + dx * i, startY + dy * i, brush.canvas.width, brush.canvas.height);
 		}
 	} else {
 		inst.ctxOffscreen1.drawImage(brush.canvas, x - brush.w2, y - brush.h2, brush.canvas.width, brush.canvas.height);
 	}
-	inst.ctx.clearRect(0, 0, inst.canvasRect.width, inst.canvasRect.height);
+	inst.ctx.clearRect(0, 0, inst.canvasRect.canvasWidth, inst.canvasRect.canvasHeight);
 	inst.ctx.drawImage(inst.offscreenCanvas2, 0, 0);
 	inst.ctx.globalAlpha = inst.getBrushProperties().opacity;
 	inst.ctx.drawImage(inst.offscreenCanvas1, 0, 0);
@@ -497,7 +531,7 @@ $paintPrivate.penOnCanvas = (inst, x, y) => {
  * @param {Number} y
  */
 $paintPrivate.fillOnCanvas = (inst, x, y) => {
-	let imageData = inst.ctx.getImageData(0, 0, inst.canvasRect.width, inst.canvasRect.height),
+	let imageData = inst.ctx.getImageData(0, 0, inst.canvasRect.canvasWidth, inst.canvasRect.canvasHeight),
 		width = imageData.width,
 		pixelIndex = 0,
 		eolPixelIndex = 0,
@@ -519,95 +553,100 @@ $paintPrivate.fillOnCanvas = (inst, x, y) => {
 	eolPixelIndex = pixelIndex - x + width;
 	solPixelIndex = pixelIndex - x;
 	matchColour = imageData[pixelIndex];
-
-	//fill line to left and right of pixel while colour matches
-	imageData[pixelIndex] = fillColour;
-	filledPixels[pixelIndex] = true;
-	let pI = pixelIndex + 1;
-	while (pI < eolPixelIndex && imageData[pI] === matchColour) {
-		imageData[pI] = fillColour;
-		filledPixels[pI] = true;
-		pI++;
-	}
-	pI = pixelIndex - 1;
-	while (pI >= solPixelIndex && imageData[pI] === matchColour) {
-		imageData[pI] = fillColour;
-		filledPixels[pI] = true;
-		pI--;
-	}
-	//add lines above and below to the scanUpDown arrays and scan for pixels
-	scanDown.push(pixelIndex - x + width);
-	scanUp.push(pixelIndex - x - width);
-	let i = 0;
-	let isFilledPixel = false;
-	let scanArray = scanDown;
-	let nextScan = scanUp;
-	let scanDirection = 'down';
-
-	while (i < scanArray.length) {
-		pI = scanArray[i];
-		solPixelIndex = pI;
-		eolPixelIndex = pI + width;
-		let pixelLineAccumulator = scanDirection === 'down' ? width : -width;
-		let reversePixelLineAccumulator = -pixelLineAccumulator;
-		let pIFirstMatch = solPixelIndex;
-		let isAdjustStartingPixelIndex = true;
-		while (pI < eolPixelIndex) {
-			if (imageData[pI] === matchColour) {
-				let adjacentPixelTest = pI + reversePixelLineAccumulator;
-				if (pIFirstMatch === -1) pIFirstMatch = pI;
-				if (filledPixels[adjacentPixelTest] === true) {
-					isFilledPixel = true;
-					let isNextScanPush = false;
-					//Once an adjacent match pixel is found fill all pixels in a line while a colour match is true regardless of adjacentPixelTest
-					//adjust the pI for the first matchColour in the row
-					if (isAdjustStartingPixelIndex === true && pI > pIFirstMatch) {
-						pI = pIFirstMatch;
-						isAdjustStartingPixelIndex = false;
-					}
-					while (pI < eolPixelIndex && imageData[pI] === matchColour) {
-						let reverseAdjacentPixelTest = pI + reversePixelLineAccumulator;
-						imageData[pI] = fillColour;
-						filledPixels[pI] = true;
-						//if a reverse direction adjacent pixel is of the match colour, add the line to the nextScan array
-						if (isNextScanPush === false && imageData[reverseAdjacentPixelTest] === matchColour && nextScan[solPixelIndex + reversePixelLineAccumulator] == undefined) {
-							nextScan.push(solPixelIndex + reversePixelLineAccumulator);
-							isNextScanPush = true;
-						}
-						pI++;
-					}
-				}
-			} else {
-				pIFirstMatch = -1;
-			}
+	//if the fill colour is the same as the match colour we don't need to do anything
+	if (fillColour !== matchColour) {
+		//fill line to left and right of pixel while colour matches
+		imageData[pixelIndex] = fillColour;
+		filledPixels[pixelIndex] = true;
+		let pI = pixelIndex + 1;
+		while (pI < eolPixelIndex && imageData[pI] === matchColour) {
+			imageData[pI] = fillColour;
+			filledPixels[pI] = true;
 			pI++;
 		}
-		//add the next line in the current scan direction if we are not at the end of the data and a pixel has been found
-		if (isFilledPixel === true && solPixelIndex + pixelLineAccumulator < imageData.length && solPixelIndex + pixelLineAccumulator > 0) {
-			scanArray.push(solPixelIndex + pixelLineAccumulator);
+		pI = pixelIndex - 1;
+		while (pI >= solPixelIndex && imageData[pI] === matchColour) {
+			imageData[pI] = fillColour;
+			filledPixels[pI] = true;
+			pI--;
 		}
-		i++;
-		if (i >= scanArray.length && nextScan.length > 0) {
-			isFilledPixel = false;
-			if (scanDirection === 'down') {
-				scanDirection = 'up';
-				scanArray = scanUp;
-				scanDown = [];
-				nextScan = scanDown;
-				i = 0;
-			} else {
-				scanDirection = 'down';
-				scanArray = scanDown;
-				scanUp = [];
-				nextScan = scanUp;
-				i = 0;
+		//add lines above and below to the scanUpDown arrays and scan for pixels
+		scanDown.push(pixelIndex - x + width);
+		scanUp.push(pixelIndex - x - width);
+		let i = 0;
+		let isFilledPixel = false;
+		let scanArray = scanDown;
+		let nextScan = scanUp;
+		let scanDirection = 'down';
+
+		while (i < scanArray.length) {
+			pI = scanArray[i];
+			solPixelIndex = pI;
+			eolPixelIndex = pI + width;
+			let pixelLineAccumulator = scanDirection === 'down' ? width : -width;
+			let reversePixelLineAccumulator = -pixelLineAccumulator;
+			let pIFirstMatch = solPixelIndex;
+			let isAdjustStartingPixelIndex = true;
+			while (pI < eolPixelIndex) {
+				if (imageData[pI] === matchColour) {
+					let adjacentPixelTest = pI + reversePixelLineAccumulator;
+					if (pIFirstMatch === -1) pIFirstMatch = pI;
+					if (filledPixels[adjacentPixelTest] === true) {
+						isFilledPixel = true;
+						let isNextScanPush = false;
+						//Once an adjacent match pixel is found fill all pixels in a line while a colour match is true regardless of adjacentPixelTest
+						//adjust the pI for the first matchColour in the row
+						if (isAdjustStartingPixelIndex === true && pI > pIFirstMatch) {
+							pI = pIFirstMatch;
+							isAdjustStartingPixelIndex = false;
+						}
+						while (pI < eolPixelIndex && imageData[pI] === matchColour) {
+							let reverseAdjacentPixelTest = pI + reversePixelLineAccumulator;
+							imageData[pI] = fillColour;
+							filledPixels[pI] = true;
+							//if a reverse direction adjacent pixel is of the match colour, add the line to the nextScan array
+							if (isNextScanPush === false && imageData[reverseAdjacentPixelTest] === matchColour && nextScan[solPixelIndex + reversePixelLineAccumulator] == undefined) {
+								nextScan.push(solPixelIndex + reversePixelLineAccumulator);
+								isNextScanPush = true;
+							}
+							pI++;
+						}
+					}
+				} else {
+					pIFirstMatch = -1;
+				}
+				pI++;
+			}
+			//add the next line in the current scan direction if we are not at the end of the data and a pixel has been found
+			if (isFilledPixel === true && solPixelIndex + pixelLineAccumulator < imageData.length && solPixelIndex + pixelLineAccumulator > 0) {
+				scanArray.push(solPixelIndex + pixelLineAccumulator);
+			}
+			i++;
+			if (i >= scanArray.length && nextScan.length > 0) {
+				isFilledPixel = false;
+				if (scanDirection === 'down') {
+					scanDirection = 'up';
+					scanArray = scanUp;
+					scanDown = [];
+					nextScan = scanDown;
+					i = 0;
+				} else {
+					scanDirection = 'down';
+					scanArray = scanDown;
+					scanUp = [];
+					nextScan = scanUp;
+					i = 0;
+				}
 			}
 		}
+		//convert imageData back to Uint8Clamped and then canvas ImageData type
+		imageData = new Uint8ClampedArray(imageData.buffer);
+		imageData = new ImageData(imageData, width);
+		inst.ctx.putImageData(imageData, 0, 0);
 	}
-	//convert imageData back to Uint8Clamped and then canvas ImageData type
-	imageData = new Uint8ClampedArray(imageData.buffer);
-	imageData = new ImageData(imageData, width);
-	inst.ctx.putImageData(imageData, 0, 0);
+	inst.ctx.restore();
+	//block rapid clicks
+	setTimeout(() => inst.isToolActive = false, 100);
 };
 
 /**
@@ -661,7 +700,7 @@ $paintPrivate.convertHexColourToRGBA = (hexColour, opacity = 1) => {
 				componentCol = parseInt('0x' + char + hexColour[i + 1]);
 				i++;
 			}
-			console.log(char, componentCol);
+			//console.log(char, componentCol);
 			fillColour.push(componentCol);
 		}
 	}

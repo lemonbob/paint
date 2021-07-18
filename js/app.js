@@ -119,17 +119,20 @@ const createModalSelector = (modalType, itemArray) => {
 	itemSelector.className = 'polymathic-paint-selector';
 	let itemCount = itemArray.length;
 	let rect = document.body.getBoundingClientRect();
-	let itemSize = Math.min(rect.width, rect.height) / itemCount;
-	if (itemSize > 70) itemSize = 70;
+	let r = (Math.min(rect.width, rect.height) * 0.7) / 2;
+	let itemSize = (2 * r * 3.1415) / (itemCount * 1.5);
+	if (itemSize > 70) {
+		itemSize = 70;
+		r = (itemSize * 1.5 * itemCount) / 3.1415 / 2;
+	}
 	let cX = rect.width / 2;
 	let cY = rect.height / 2;
-	let r = (itemSize * 1.5 * itemCount) / 3.1415 / 2;
 	let angleInc = 6.28 / itemCount;
 	let angle = 0;
 	let html = '';
 
 	for (let i = 0, item; (item = itemArray[i]); i++) {
-		let commonStyles = `width:${itemSize}px; height:${itemSize}px; transform: translate(${Math.sin(angle) * r + cX - 35}px, ${Math.cos(angle) * -r + cY - 35}px);`;
+		let commonStyles = `width:${itemSize}px; height:${itemSize}px; transform: translate(${Math.sin(angle) * r + cX - itemSize / 2}px, ${Math.cos(angle) * -r + cY - itemSize / 2}px);`;
 		switch (modalType) {
 			case 'palette':
 				html += `<div class="polymathic-paint-selector_item" paint-colour="${item}" style="background-color:${item}; ${commonStyles}"></div>`;

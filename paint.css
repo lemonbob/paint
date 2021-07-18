@@ -21,13 +21,15 @@ body {
 .canvas {
 	position: absolute;
 	width: 100%;
-	height: 100%;	
+	height: 100%;
+	z-index: 50;
 }
 
 .slider-wrapper {
 	position: relative;
 	padding: 30px 20px 0px 20px;
 	pointer-events: none;
+	z-index: 100;
 }
 
 .controls-wrapper {
@@ -37,6 +39,7 @@ body {
 	pointer-events: none;
 	padding: 30px 20px 0px 20px;
 	justify-content: space-between;
+	z-index: 100;
 }
 
 .palette-wrapper {
@@ -46,9 +49,11 @@ body {
 	pointer-events: none;
 }
 
-.colour-picker {
-	width: 70px;
-	height: 70px;
+.type-picker {
+	max-width: 70px;
+	max-height: 70px;
+	width: 10vw;
+	height: 10vw;
 	border-radius: 50%;
 	background-color: #fff;
 	box-shadow: 2px 2px 5px 0px rgba(0, 0, 0, 0.5);
@@ -58,7 +63,7 @@ body {
 	border: 4px transparent solid;
 }
 
-.colour-picker img {
+.type-picker img {
 	pointer-events: none;
 	width: 80%;
 	height: 80%;
@@ -81,7 +86,7 @@ label {
 	width: 100%;
 	height: 100%;
 	animation: modal-selector-fadeIn 0.7s ease both;
-	z-index:100;
+	z-index: 100;
 }
 
 .polymathic-paint-selector_item {
@@ -96,7 +101,14 @@ label {
 	pointer-events: all;
 }
 
-.polymathic-paint-colour-picker {
+.polymathic-paint-selector_item img {
+	pointer-events: none;
+	width: 80%;
+	height: 80%;
+	margin: 10%;
+}
+
+/*.polymathic-paint-colour-picker {
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -104,14 +116,7 @@ label {
 	border-radius: 50%;
 	box-shadow: 2px 2px 5px 0px rgba(0, 0, 0, 0.5);
 	pointer-events: all;
-}
-
-.polymathic-paint-selector_item img {
-	pointer-events: none;
-	width: 80%;
-	height: 80%;
-	margin: 10%;
-}
+}*/
 
 @keyframes modal-selector-fadeIn {
 	0% {

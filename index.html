@@ -12,24 +12,24 @@
 
 
 <body>
-
 	<canvas class="canvas"></canvas>
 	<div class="slider-wrapper">
 		<label for="brush-size">Brush Size</label>
-		<input class="slider" type="range" id="brush-size" name="brush-size" min="1" max="350">
+		<input class="slider" type="range" id="brush-size" name="brush-size" min="1" max="100">
 		<label for="brush-opacity">Transparency</label>
 		<input class="slider" type="range" id="brush-opacity" name="brush-opacity" min="1" max="100">
 	</div>
 	<div class="controls-wrapper">
 		<div class="palette-wrapper">
-			<div class="colour-picker" tool-picker="true"><img src="icons/paint.png"></div>
-			<div class="colour-picker" brush-picker="true"><img src="brushes/brush1.png"></div>				
+			<div class="type-picker" tool-picker="true"><img src="icons/paint.png"></div>
+			<div class="type-picker" brush-picker="true"><img src="brushes/brush1.png"></div>				
 		</div>
 		<div class="palette-wrapper">
-			<div class="colour-picker" colour-picker="true" style="background-color:#f00;"></div>			
+			<div class="type-picker" colour-picker="true" style="background-color:#f00;"></div>			
 		</div>
 	</div>
-	<!-- SCRIPT-->
+	<!--<div id="output" style="position:absolute; top:50%;left:0px;"></div>-->
+	<!--SCRIPT-->
 	<script src="js/app.js" type="module"></script>
 </body>
 
