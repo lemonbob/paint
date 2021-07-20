@@ -27,7 +27,8 @@ body {
 .slider-wrapper {
 	position: relative;
 	padding: 30px 20px 0px 20px;
-	pointer-events: none;	
+	pointer-events: none;
+	z-index: 100;
 }
 
 .controls-wrapper {
@@ -36,7 +37,8 @@ body {
 	flex-direction: row;
 	pointer-events: none;
 	padding: 30px 20px 0px 20px;
-	justify-content: space-between;	
+	justify-content: space-between;
+	z-index: 100;
 }
 
 .palette-wrapper {
