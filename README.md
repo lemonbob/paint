@@ -10,7 +10,7 @@ Tools include - Paint, Spray, Pen, Bucket Fill, Eraser
 
 To change tool, brush or colour - click the icon and select a new tool, brush or colour from the modal.
 
-Bucket fill uses a custom algorithm that is 100s of times faster than StackOverflow recommended answers
+Bucket fill uses a custom algorithm that is 20-100 times faster than the StackOverflow recommended answer
 
 * To use, import createPolymathicPaint from './paint.js';
 * create an instance of the component, add at least one Canvas, and add at least one brush (ideally a minimum of 2 brushes).
